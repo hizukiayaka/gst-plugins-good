@@ -43,6 +43,7 @@
 #include "gstv4l2sink.h"
 #include "gstv4l2radio.h"
 #include "gstv4l2videodec.h"
+#include "gstv4l2videoenc.h"
 #include "gstv4l2deviceprovider.h"
 #include "gstv4l2transform.h"
 
@@ -169,6 +170,9 @@ gst_v4l2_probe_and_register (GstPlugin * plugin)
           sink_caps, src_caps);
     else if (gst_v4l2_is_transform (sink_caps, src_caps))
       ret = gst_v4l2_transform_register (plugin, basename, it->device_path,
+          sink_caps, src_caps);
+    else if (gst_v4l2_is_video_enc (sink_caps, src_caps))
+      ret = gst_v4l2_video_enc_register (plugin, basename, it->device_path,
           sink_caps, src_caps);
     /* else if ( ... etc. */
 
