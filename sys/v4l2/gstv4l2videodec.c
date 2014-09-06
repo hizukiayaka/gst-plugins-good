@@ -45,7 +45,7 @@ typedef struct
   gchar *device;
   GstCaps *sink_caps;
   GstCaps *src_caps;
-} GstV4l2VideoDecCData;
+} GstV4l2VideoCData;
 
 enum
 {
@@ -873,7 +873,7 @@ gst_v4l2_video_dec_subclass_init (gpointer g_class, gpointer data)
 {
   GstV4l2VideoDecClass *klass = GST_V4L2_VIDEO_DEC_CLASS (g_class);
   GstElementClass *element_class = GST_ELEMENT_CLASS (g_class);
-  GstV4l2VideoDecCData *cdata = data;
+  GstV4l2VideoCData *cdata = data;
 
   klass->default_device = cdata->device;
 
@@ -909,9 +909,9 @@ gst_v4l2_video_dec_register (GstPlugin * plugin, const gchar * basename,
   GTypeInfo type_info = { 0, };
   GType type, subtype;
   gchar *type_name;
-  GstV4l2VideoDecCData *cdata;
+  GstV4l2VideoCData *cdata;
 
-  cdata = g_new0 (GstV4l2VideoDecCData, 1);
+  cdata = g_new0 (GstV4l2VideoCData, 1);
   cdata->device = g_strdup (device_path);
   cdata->sink_caps = gst_caps_ref (sink_caps);
   cdata->src_caps = gst_caps_ref (src_caps);

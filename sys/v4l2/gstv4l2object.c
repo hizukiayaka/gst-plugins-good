@@ -55,7 +55,8 @@ GST_DEBUG_CATEGORY_EXTERN (v4l2_debug);
 #define DEFAULT_PROP_FREQUENCY          0
 #define DEFAULT_PROP_IO_MODE            GST_V4L2_IO_AUTO
 
-#define ENCODED_BUFFER_SIZE             (1 * 1024 * 1024)
+#define ENCODEDR_BUFFER_SIZE             (2 * 1024 * 1024)
+#define DECODEDR_BUFFER_SIZE             (1 * 1024 * 1024)
 
 enum
 {
@@ -3320,8 +3321,13 @@ gst_v4l2_object_set_format_full (GstV4l2Object * v4l2object, GstCaps * caps,
       format.fmt.pix_mp.plane_fmt[i].bytesperline = stride;
     }
 
-    if (GST_VIDEO_INFO_FORMAT (&info) == GST_VIDEO_FORMAT_ENCODED)
-      format.fmt.pix_mp.plane_fmt[0].sizeimage = ENCODED_BUFFER_SIZE;
+    if (GST_VIDEO_INFO_FORMAT (&info) == GST_VIDEO_FORMAT_ENCODED) {
+      if (GST_IS_VIDEO_ENCODER (v4l2object)) {
+        format.fmt.pix_mp.plane_fmt[0].sizeimage = ENCODEDR_BUFFER_SIZE;
+      } else {
+        format.fmt.pix_mp.plane_fmt[0].sizeimage = DECODEDR_BUFFER_SIZE;
+      }
+    }
   } else {
     gint stride = GST_VIDEO_INFO_PLANE_STRIDE (&info, 0);
 
@@ -3338,8 +3344,13 @@ gst_v4l2_object_set_format_full (GstV4l2Object * v4l2object, GstCaps * caps,
     /* try to ask our prefered stride */
     format.fmt.pix.bytesperline = stride;
 
-    if (GST_VIDEO_INFO_FORMAT (&info) == GST_VIDEO_FORMAT_ENCODED)
-      format.fmt.pix.sizeimage = ENCODED_BUFFER_SIZE;
+    if (GST_VIDEO_INFO_FORMAT (&info) == GST_VIDEO_FORMAT_ENCODED) {
+      if (GST_IS_VIDEO_ENCODER (v4l2object)) {
+        format.fmt.pix.sizeimage = ENCODEDR_BUFFER_SIZE;
+      } else {
+        format.fmt.pix.sizeimage = DECODEDR_BUFFER_SIZE;
+      }
+    }
   }
 
   GST_DEBUG_OBJECT (v4l2object->element, "Desired format is %dx%d, format "
