@@ -29,6 +29,7 @@
 
 #include <gstv4l2object.h>
 #include <gstv4l2bufferpool.h>
+#include "gstv4l2.h"
 
 GST_DEBUG_CATEGORY_EXTERN (v4l2videoenc_debug);
 
@@ -43,7 +44,6 @@ G_BEGIN_DECLS
   (G_TYPE_CHECK_INSTANCE_TYPE((obj),GST_TYPE_V4L2_VIDEO_ENC))
 #define GST_IS_V4L2_VIDEO_ENC_CLASS(obj) \
   (G_TYPE_CHECK_CLASS_TYPE((klass),GST_TYPE_V4L2_VIDEO_ENC))
-
 typedef struct _GstV4l2VideoEnc GstV4l2VideoEnc;
 typedef struct _GstV4l2VideoEncClass GstV4l2VideoEncClass;
 
@@ -72,6 +72,9 @@ struct _GstV4l2VideoEncClass
   GstVideoEncoderClass parent_class;
 
   gchar *default_device;
+
+    GstFlowReturn (*handle_frame) (GstVideoEncoder * encoder,
+      GstVideoCodecFrame * frame, GstCaps * outcaps);
 };
 
 GType gst_v4l2_video_enc_get_type (void);

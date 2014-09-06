@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2014 SUMOMO Computer Association
- *     Author: ayaka <ayaka@mail.soulik.info>
+ *     Author: ayaka <ayaka@soulik.info>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -41,13 +41,6 @@ GST_DEBUG_CATEGORY_STATIC (gst_v4l2_video_enc_debug);
 #define MAX_CODEC_FRAME (2 * 1024 * 1024)
 
 static gboolean gst_v4l2_video_enc_flush (GstVideoEncoder * encoder);
-
-typedef struct
-{
-  gchar *device;
-  GstCaps *sink_caps;
-  GstCaps *src_caps;
-} GstV4l2VideoEncCData;
 
 enum
 {
@@ -242,9 +235,6 @@ gst_v4l2_video_enc_set_format (GstVideoEncoder * encoder,
 {
   gboolean ret = TRUE;
   GstV4l2VideoEnc *self = GST_V4L2_VIDEO_ENC (encoder);
-  GstCaps *outcaps;
-  GstStructure *structure;
-
 
   GST_DEBUG_OBJECT (self, "Setting format: %" GST_PTR_FORMAT, state->caps);
 
@@ -264,16 +254,7 @@ gst_v4l2_video_enc_set_format (GstVideoEncoder * encoder,
   if (ret)
     self->input_state = gst_video_codec_state_ref (state);
 
-  outcaps = gst_caps_new_empty_simple ("video/x-h264");
-  structure = gst_caps_get_structure (outcaps, 0);
-  gst_structure_set (structure, "stream-format",
-      G_TYPE_STRING, "byte-stream", NULL);
-  gst_structure_set (structure, "alignment", G_TYPE_STRING, "au", NULL);
-
-
   GST_DEBUG_OBJECT (self, "output caps: %" GST_PTR_FORMAT, state->caps);
-
-
 
 done:
   return ret;
@@ -453,12 +434,10 @@ gst_v4l2_video_enc_loop_stopped (GstV4l2VideoEnc * self)
 
 static GstFlowReturn
 gst_v4l2_video_enc_handle_frame (GstVideoEncoder * encoder,
-    GstVideoCodecFrame * frame)
+    GstVideoCodecFrame * frame, GstCaps * outcaps)
 {
   GstV4l2VideoEnc *self = GST_V4L2_VIDEO_ENC (encoder);
   GstFlowReturn ret = GST_FLOW_OK;
-  GstCaps *outcaps;
-  GstStructure *structure;
 
   GST_DEBUG_OBJECT (self, "Handling frame %d", frame->system_frame_number);
 
@@ -472,14 +451,8 @@ gst_v4l2_video_enc_handle_frame (GstVideoEncoder * encoder,
       goto not_negotiated;
   }
 
-  if (G_UNLIKELY (!GST_V4L2_IS_ACTIVE (self->v4l2capture))) {
+  if (NULL != outcaps) {
     GstBufferPool *pool = GST_BUFFER_POOL (self->v4l2output->pool);
-
-    outcaps = gst_caps_new_empty_simple ("video/x-h264");
-    structure = gst_caps_get_structure (outcaps, 0);
-    gst_structure_set (structure, "stream-format",
-        G_TYPE_STRING, "byte-stream", NULL);
-    gst_structure_set (structure, "alignment", G_TYPE_STRING, "au", NULL);
     gst_v4l2_object_set_format (self->v4l2capture, outcaps);
 
     if (!gst_buffer_pool_is_active (pool)) {
@@ -767,27 +740,6 @@ gst_v4l2_video_enc_init (GstV4l2VideoEnc * self)
 }
 
 static void
-gst_v4l2_video_enc_subinstance_init (GTypeInstance * instance, gpointer g_class)
-{
-  GstV4l2VideoEncClass *klass = GST_V4L2_VIDEO_ENC_CLASS (g_class);
-  GstV4l2VideoEnc *self = GST_V4L2_VIDEO_ENC (instance);
-
-  self->v4l2output =
-      gst_v4l2_object_new (GST_ELEMENT (self),
-      V4L2_BUF_TYPE_VIDEO_OUTPUT,
-      klass->default_device, gst_v4l2_get_output, gst_v4l2_set_output, NULL);
-  self->v4l2output->no_initial_format = TRUE;
-  self->v4l2output->keep_aspect = FALSE;
-
-  self->v4l2capture =
-      gst_v4l2_object_new (GST_ELEMENT (self),
-      V4L2_BUF_TYPE_VIDEO_CAPTURE,
-      klass->default_device, gst_v4l2_get_input, gst_v4l2_set_input, NULL);
-  self->v4l2capture->no_initial_format = TRUE;
-  self->v4l2capture->keep_aspect = FALSE;
-}
-
-static void
 gst_v4l2_video_enc_class_init (GstV4l2VideoEncClass * klass)
 {
   GstElementClass *element_class;
@@ -827,40 +779,19 @@ gst_v4l2_video_enc_class_init (GstV4l2VideoEncClass * klass)
       GST_DEBUG_FUNCPTR (gst_v4l2_video_enc_negotiate);
   video_encoder_class->decide_allocation =
       GST_DEBUG_FUNCPTR (gst_v4l2_video_enc_decide_allocation);
-  /* FIXME propose_allocation or not ? */
-  video_encoder_class->handle_frame =
-      GST_DEBUG_FUNCPTR (gst_v4l2_video_enc_handle_frame);
   video_encoder_class->sink_query =
       GST_DEBUG_FUNCPTR (gst_v4l2_video_enc_sink_query);
   video_encoder_class->src_query =
       GST_DEBUG_FUNCPTR (gst_v4l2_video_enc_src_query);
   video_encoder_class->sink_event =
       GST_DEBUG_FUNCPTR (gst_v4l2_video_enc_sink_event);
+  /* FIXME propose_allocation or not ? */
+  klass->handle_frame = GST_DEBUG_FUNCPTR (gst_v4l2_video_enc_handle_frame);
 
   element_class->change_state =
       GST_DEBUG_FUNCPTR (gst_v4l2_video_enc_change_state);
 
   gst_v4l2_object_install_m2m_properties_helper (gobject_class);
-}
-
-static void
-gst_v4l2_video_enc_subclass_init (gpointer g_class, gpointer data)
-{
-  GstV4l2VideoEncClass *klass = GST_V4L2_VIDEO_ENC_CLASS (g_class);
-  GstElementClass *element_class = GST_ELEMENT_CLASS (g_class);
-  GstV4l2VideoEncCData *cdata = data;
-
-  klass->default_device = cdata->device;
-
-  /* Note: gst_pad_template_new() take the floating ref from the caps */
-  gst_element_class_add_pad_template (element_class,
-      gst_pad_template_new ("sink",
-          GST_PAD_SINK, GST_PAD_ALWAYS, cdata->sink_caps));
-  gst_element_class_add_pad_template (element_class,
-      gst_pad_template_new ("src",
-          GST_PAD_SRC, GST_PAD_ALWAYS, cdata->src_caps));
-
-  g_free (cdata);
 }
 
 /* Probing functions */
@@ -874,38 +805,4 @@ gst_v4l2_is_video_enc (GstCaps * sink_caps, GstCaps * src_caps)
     ret = TRUE;
 
   return ret;
-}
-
-gboolean
-gst_v4l2_video_enc_register (GstPlugin * plugin, const gchar * basename,
-    const gchar * device_path, GstCaps * sink_caps, GstCaps * src_caps)
-{
-  GTypeQuery type_query;
-  GTypeInfo type_info = { 0, };
-  GType type, subtype;
-  gchar *type_name;
-  GstV4l2VideoEncCData *cdata;
-
-  cdata = g_new0 (GstV4l2VideoEncCData, 1);
-  cdata->device = g_strdup (device_path);
-  cdata->sink_caps = gst_caps_ref (sink_caps);
-  cdata->src_caps = gst_caps_ref (src_caps);
-
-  type = gst_v4l2_video_enc_get_type ();
-  g_type_query (type, &type_query);
-  memset (&type_info, 0, sizeof (type_info));
-  type_info.class_size = type_query.class_size;
-  type_info.instance_size = type_query.instance_size;
-  type_info.class_init = gst_v4l2_video_enc_subclass_init;
-  type_info.class_data = cdata;
-  type_info.instance_init = gst_v4l2_video_enc_subinstance_init;
-
-  type_name = g_strdup_printf ("v4l2%senc", basename);
-  subtype = g_type_register_static (type, type_name, &type_info, 0);
-
-  gst_element_register (plugin, type_name, GST_RANK_PRIMARY + 1, subtype);
-
-  g_free (type_name);
-
-  return TRUE;
 }
