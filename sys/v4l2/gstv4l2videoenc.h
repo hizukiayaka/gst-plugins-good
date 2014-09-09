@@ -29,7 +29,6 @@
 
 #include <gstv4l2object.h>
 #include <gstv4l2bufferpool.h>
-#include "gstv4l2.h"
 
 GST_DEBUG_CATEGORY_EXTERN (v4l2videoenc_debug);
 
@@ -87,9 +86,6 @@ struct _GstV4l2VideoEncClass
 GType gst_v4l2_video_enc_get_type (void);
 
 gboolean gst_v4l2_is_video_enc (GstCaps * sink_caps, GstCaps * src_caps);
-gboolean gst_v4l2_video_enc_register (GstPlugin * plugin,
-    const gchar * basename,
-    const gchar * device_path, GstCaps * sink_caps, GstCaps * src_caps);
 
 G_END_DECLS
 #endif /* __GST_V4L2_VIDEO_ENC_H__ */

@@ -45,8 +45,7 @@ enum
 };
 
 #define gst_v4l2_h264_enc_parent_class parent_class
-G_DEFINE_ABSTRACT_TYPE (GstV4l2H264Enc, gst_v4l2_h264_enc,
-    GST_TYPE_V4L2_VIDEO_ENC);
+G_DEFINE_TYPE (GstV4l2H264Enc, gst_v4l2_h264_enc, GST_TYPE_V4L2_VIDEO_ENC);
 
 static void
 gst_v4l2_h264_enc_set_property (GObject * object,
@@ -95,31 +94,6 @@ gst_v4l2_h264_enc_init (GstV4l2H264Enc * self)
 }
 
 static void
-gst_v4l2_h264_enc_subinstance_init (GTypeInstance * instance, gpointer g_class)
-{
-  GstV4l2H264EncClass *klass = GST_V4L2_H264_ENC_CLASS (g_class);
-  GstV4l2H264Enc *self = GST_V4L2_H264_ENC (instance);
-  GstV4l2VideoEnc *parent = GST_V4L2_VIDEO_ENC (instance);
-
-  parent->v4l2output =
-      gst_v4l2_object_new (GST_ELEMENT (self),
-      V4L2_BUF_TYPE_VIDEO_OUTPUT,
-      GST_V4L2_VIDEO_ENC_CLASS (g_class)->default_device, gst_v4l2_get_output,
-      gst_v4l2_set_output, NULL);
-  parent->v4l2output->no_initial_format = TRUE;
-  parent->v4l2output->keep_aspect = FALSE;
-
-  parent->v4l2capture =
-      gst_v4l2_object_new (GST_ELEMENT (self),
-      V4L2_BUF_TYPE_VIDEO_CAPTURE,
-      GST_V4L2_VIDEO_ENC_CLASS (g_class)->default_device, gst_v4l2_get_input,
-      gst_v4l2_set_input, NULL);
-  parent->v4l2capture->no_initial_format = TRUE;
-  parent->v4l2capture->keep_aspect = FALSE;
-}
-
-
-static void
 gst_v4l2_h264_enc_class_init (GstV4l2H264EncClass * klass)
 {
   GstElementClass *element_class;
@@ -153,28 +127,6 @@ gst_v4l2_h264_enc_class_init (GstV4l2H264EncClass * klass)
 
 }
 
-static void
-gst_v4l2_h264_enc_subclass_init (gpointer g_class, gpointer data)
-{
-  GstV4l2H264EncClass *klass = GST_V4L2_H264_ENC_CLASS (g_class);
-  GstElementClass *element_class = GST_ELEMENT_CLASS (g_class);
-  GstV4l2VideoCData *cdata = data;
-
-  GST_V4L2_VIDEO_ENC_CLASS (g_class)->default_device = cdata->device;
-
-  /* Note: gst_pad_template_new() take the floating ref from the caps */
-  gst_element_class_add_pad_template (element_class,
-      gst_pad_template_new ("sink",
-          GST_PAD_SINK, GST_PAD_ALWAYS, cdata->sink_caps));
-  gst_element_class_add_pad_template (element_class,
-      gst_pad_template_new ("src",
-          GST_PAD_SRC, GST_PAD_ALWAYS, cdata->src_caps));
-
-  g_free (cdata);
-}
-
-
-
 /* Probing functions */
 gboolean
 gst_v4l2_is_h264_enc (GstCaps * sink_caps, GstCaps * src_caps)
@@ -187,38 +139,4 @@ gst_v4l2_is_h264_enc (GstCaps * sink_caps, GstCaps * src_caps)
     ret = TRUE;
 
   return ret;
-}
-
-gboolean
-gst_v4l2_h264_enc_register (GstPlugin * plugin, const gchar * basename,
-    const gchar * device_path, GstCaps * sink_caps, GstCaps * src_caps)
-{
-  GTypeQuery type_query;
-  GTypeInfo type_info = { 0, };
-  GType type, subtype;
-  gchar *type_name;
-  GstV4l2VideoCData *cdata;
-
-  cdata = g_new0 (GstV4l2VideoCData, 1);
-  cdata->device = g_strdup (device_path);
-  cdata->sink_caps = gst_caps_ref (sink_caps);
-  cdata->src_caps = gst_caps_ref (src_caps);
-
-  type = gst_v4l2_h264_enc_get_type ();
-  g_type_query (type, &type_query);
-  memset (&type_info, 0, sizeof (type_info));
-  type_info.class_size = type_query.class_size;
-  type_info.instance_size = type_query.instance_size;
-  type_info.class_init = gst_v4l2_h264_enc_subclass_init;
-  type_info.class_data = cdata;
-  type_info.instance_init = gst_v4l2_h264_enc_subinstance_init;
-
-  type_name = g_strdup_printf ("v4l2%sh264enc", basename);
-  subtype = g_type_register_static (type, type_name, &type_info, 0);
-
-  gst_element_register (plugin, type_name, GST_RANK_PRIMARY + 1, subtype);
-
-  g_free (type_name);
-
-  return TRUE;
 }
