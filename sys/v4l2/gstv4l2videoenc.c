@@ -324,7 +324,6 @@ gst_v4l2_video_enc_finish (GstVideoEncoder * encoder)
         (self->v4l2output->pool), &buffer);
     gst_buffer_unref (buffer);
   }
-  GST_VIDEO_ENCODER_STREAM_LOCK (encoder);
 
   /* and ensure the processing thread has stopped in case another error
    * occured. */
