@@ -52,26 +52,16 @@ static void
 gst_v4l2_h264_enc_set_property (GObject * object,
     guint prop_id, const GValue * value, GParamSpec * pspec)
 {
-  GstV4l2H264Enc *self = GST_V4L2_H264_ENC (object);
-
-  switch (prop_id) {
-      /* By default, only set on output */
-    default:
-      break;
-  }
+    GST_V4L2_VIDEO_ENC_CLASS(parent_class)->set_property
+      (object, prop_id, value, pspec);
 }
 
 static void
 gst_v4l2_h264_enc_get_property (GObject * object,
     guint prop_id, GValue * value, GParamSpec * pspec)
 {
-  GstV4l2H264Enc *self = GST_V4L2_H264_ENC (object);
-
-  switch (prop_id) {
-      /* By default read from output */
-    default:
-      break;
-  }
+   GST_V4L2_VIDEO_ENC_CLASS(parent_class)->get_property
+     (object, prop_id, value, pspec);
 }
 
 static GstFlowReturn

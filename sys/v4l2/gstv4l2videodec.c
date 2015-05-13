@@ -72,6 +72,10 @@ gst_v4l2_video_dec_set_property (GObject * object,
       gst_v4l2_object_set_property_helper (self->v4l2capture, prop_id, value,
           pspec);
       break;
+    case PROP_EXTRA_CONTROLS:
+      gst_v4l2_object_set_property_helper (self->v4l2output, prop_id, value,
+          pspec);
+      break;
 
       /* By default, only set on output */
     default:
@@ -96,6 +100,10 @@ gst_v4l2_video_dec_get_property (GObject * object,
       break;
     case PROP_CAPTURE_IO_MODE:
       gst_v4l2_object_get_property_helper (self->v4l2capture, prop_id, value,
+          pspec);
+      break;
+    case PROP_EXTRA_CONTROLS:
+      gst_v4l2_object_get_property_helper (self->v4l2output, prop_id, value,
           pspec);
       break;
 

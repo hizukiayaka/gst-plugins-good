@@ -73,8 +73,15 @@ struct _GstV4l2VideoEncClass
 
   gchar *default_device;
 
-    GstFlowReturn (*handle_frame) (GstVideoEncoder * encoder,
+  GstFlowReturn (*handle_frame) (GstVideoEncoder * encoder,
       GstVideoCodecFrame * frame, GstCaps * outcaps);
+
+  void (*set_property) (GObject * object,
+    guint prop_id, const GValue * value, GParamSpec * pspec);
+
+  void  (*get_property) (GObject * object,
+    guint prop_id, GValue * value, GParamSpec * pspec);
+
 };
 
 GType gst_v4l2_video_enc_get_type (void);

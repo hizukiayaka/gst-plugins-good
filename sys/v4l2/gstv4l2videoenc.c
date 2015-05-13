@@ -52,7 +52,7 @@ enum
 G_DEFINE_ABSTRACT_TYPE (GstV4l2VideoEnc, gst_v4l2_video_enc,
     GST_TYPE_VIDEO_ENCODER);
 
-static void
+void
 gst_v4l2_video_enc_set_property (GObject * object,
     guint prop_id, const GValue * value, GParamSpec * pspec)
 {
@@ -76,6 +76,10 @@ gst_v4l2_video_enc_set_property (GObject * object,
       gst_v4l2_object_set_property_helper (self->v4l2capture,
           prop_id, value, pspec);
       break;
+    case PROP_EXTRA_CONTROLS:
+      gst_v4l2_object_set_property_helper (self->v4l2output,
+          prop_id, value, pspec);
+      break;
 
       /* By default, only set on output */
     default:
@@ -87,7 +91,7 @@ gst_v4l2_video_enc_set_property (GObject * object,
   }
 }
 
-static void
+void
 gst_v4l2_video_enc_get_property (GObject * object,
     guint prop_id, GValue * value, GParamSpec * pspec)
 {
@@ -103,6 +107,10 @@ gst_v4l2_video_enc_get_property (GObject * object,
           PROP_IO_MODE, value, pspec);
       break;
 
+    case PROP_EXTRA_CONTROLS:
+      gst_v4l2_object_get_property_helper (self->v4l2output,
+          prop_id, value, pspec);
+      break;
       /* By default read from output */
     default:
       if (!gst_v4l2_object_get_property_helper (self->v4l2output,
@@ -787,6 +795,10 @@ gst_v4l2_video_enc_class_init (GstV4l2VideoEncClass * klass)
       GST_DEBUG_FUNCPTR (gst_v4l2_video_enc_sink_event);
   /* FIXME propose_allocation or not ? */
   klass->handle_frame = GST_DEBUG_FUNCPTR (gst_v4l2_video_enc_handle_frame);
+  klass->set_property =
+      GST_DEBUG_FUNCPTR (gst_v4l2_video_enc_set_property);
+  klass->get_property =
+      GST_DEBUG_FUNCPTR (gst_v4l2_video_enc_get_property);
 
   element_class->change_state =
       GST_DEBUG_FUNCPTR (gst_v4l2_video_enc_change_state);
