@@ -459,6 +459,17 @@ gst_v4l2_video_enc_handle_frame (GstVideoEncoder * encoder,
   }
 
   if (NULL != outcaps) {
+    /* Filling caps should be done in gst_video_encoder_negotiate_default(),
+     * but we need it to be done here in advance because
+     * gst_v4l2_object_set_format() must be done now and can't wait for
+     * caps negotiation. */
+    GST_DEBUG_OBJECT (self, "Filling src caps with output dimensions %ux%u",
+        self->input_state->info.width, self->input_state->info.height);
+
+    gst_caps_set_simple (outcaps,
+        "width", G_TYPE_INT, self->input_state->info.width,
+        "height", G_TYPE_INT, self->input_state->info.height, NULL);
+
     GstBufferPool *pool = GST_BUFFER_POOL (self->v4l2output->pool);
     gst_v4l2_object_set_format (self->v4l2capture, outcaps);
 
