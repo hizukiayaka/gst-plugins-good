@@ -821,10 +821,10 @@ gst_v4l2_video_dec_sink_event (GstVideoDecoder * decoder, GstEvent * event)
   ret = GST_VIDEO_DECODER_CLASS (parent_class)->sink_event (decoder, event);
 
   switch (GST_EVENT_TYPE (event)) {
-    case GST_EVENT_FLUSH_START:
+    case GST_EVENT_FLUSH_STOP:
       /* The processing thread should stop now, wait for it */
       gst_pad_stop_task (decoder->srcpad);
-      GST_DEBUG_OBJECT (self, "flush start done");
+      GST_DEBUG_OBJECT (self, "flush stop done");
       break;
     default:
       break;
